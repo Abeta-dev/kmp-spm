@@ -1,0 +1,15 @@
+# Abeta KMP Kit — SwiftPM Binary Distribution
+
+> Direct-URL Swift Package Manager binary mirror for Abeta KMP Kit Apple Release XCFrameworks (`AbetaSduiKit` for iOS 15+ and `AbetaWatchKit` for watchOS 9+). Zero credentials required.
+
+## Package Manifest & Verification
+
+- [Package.swift](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/Package.swift): SwiftPM binary target manifest (`AbetaSduiKit` & `AbetaWatchKit`)
+- [SHA256SUMS.txt](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/SHA256SUMS.txt): Verified SHA-256 checksums for all `.xcframework.zip` release archives
+- [README.md](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/README.md): Xcode & `Package.swift` integration guide
+
+## Upstream Platform Repositories
+
+- [Abeta KMP Kit](https://raw.githubusercontent.com/Abeta-dev/kmp/main/llms.txt): Core KMP SDK, 17 canonical SDUI snippets, Room 3 database, & Apple host glue
+- [Abeta Dynamic Layout Engine](https://raw.githubusercontent.com/Abeta-dev/layout-engine/main/llms.txt): Multi-tenant SDUI layout CMS & Visual Studio
+- [Abeta SDUI Domain BFF](https://raw.githubusercontent.com/Abeta-dev/sdui-bff/main/llms.txt): Standalone Go BFF powering 6 vertical apps

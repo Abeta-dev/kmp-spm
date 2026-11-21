@@ -1,0 +1,2 @@
+3c07699f01a8f7f351c8b57a9bd1b9df4b5fc281794bdc9990036f0574e36b9c  AbetaSduiKit-v0.1.0.xcframework.zip
+c15929d48b216257921750772c5a515e724b65f631f8c6b6ef81f6b71f7708f2  AbetaWatchKit-v0.1.0.xcframework.zip
