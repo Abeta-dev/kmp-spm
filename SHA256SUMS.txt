@@ -1,3 +1,3 @@
-53094cc89e85f78d2a264243e182ce7e2ca31ebf0404511dba80ad837f6452bd  AbetaSduiKit-v0.6.0.xcframework.zip
-9640b8548d847e18d87f4cb5e06adcd92c7d89eed3eda53693eaa453a4e9d055  AbetaWatchKit-v0.6.0.xcframework.zip
-a92793e488508afb19ac35131242748de544335b7afb239e775d431aab703a17  AbetaSwiftUI-Sources-v0.6.0.zip
+4bf4237aaabe289779f554ab9a267e0fe88e2446942679043d9c4e0616ec9c21  AbetaSduiKit-v0.7.0.xcframework.zip
+8663df892160dfca47c18485901185c880146088a37ad5976dbc6b76301fcd11  AbetaWatchKit-v0.7.0.xcframework.zip
+14377f0ab2dfceed7dc91b5ad890c8cb47513171ee2cc1b48c532b1be1507f8f  AbetaSwiftUI-Sources-v0.7.0.zip

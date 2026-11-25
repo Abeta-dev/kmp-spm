@@ -12,6 +12,6 @@
 
 ## Upstream Platform Repositories
 
-- [Abeta KMP Kit](https://raw.githubusercontent.com/Abeta-dev/kmp/main/llms.txt): Core KMP SDK (`v0.6.0`), 23 canonical SDUI snippets (incl. `custom_slot` & `graph_canvas`), version-gated ETag/304 caching, SSE delta streaming, Room 3 database, & Apple/Wear OS host glue
+- [Abeta KMP Kit](https://raw.githubusercontent.com/Abeta-dev/kmp/main/llms.txt): Core KMP SDK (`v0.7.0`), 23 canonical SDUI snippets (incl. `custom_slot` & `graph_canvas`), version-gated ETag/304 caching, SSE delta streaming, Room 3 database, & Apple/Wear OS host glue
 - [Abeta Dynamic Layout Engine](https://raw.githubusercontent.com/Abeta-dev/layout-engine/main/llms.txt): Multi-tenant SDUI layout CMS & Visual Studio
 - [Abeta SDUI Domain BFF](https://raw.githubusercontent.com/Abeta-dev/sdui-bff/main/llms.txt): Standalone Go BFF powering vertical apps

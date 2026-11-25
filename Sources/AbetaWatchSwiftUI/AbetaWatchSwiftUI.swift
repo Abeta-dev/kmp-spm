@@ -1,6 +1,93 @@
-#if canImport(SwiftUI)
+#if canImport(SwiftUI) && os(watchOS)
+import Foundation
 import SwiftUI
 import AbetaWatchKit
+
+// MARK: - Concurrency & Lifecycle Helpers
+
+private struct WatchUiStateBox: @unchecked Sendable {
+    let value: WatchUiState
+}
+
+private final class WatchCancelHandle: @unchecked Sendable {
+    private let lock = NSLock()
+    private var onCancel: (() -> Void)?
+
+    init(_ onCancel: @escaping () -> Void) {
+        self.onCancel = onCancel
+    }
+
+    func cancel() {
+        lock.lock()
+        let block = onCancel
+        onCancel = nil
+        lock.unlock()
+        block?()
+    }
+}
+
+private final class WatchObservationLifecycle: @unchecked Sendable {
+    let holder: WatchCompanionHostHolder
+    private let lock = NSLock()
+    private var stateCancel: (() -> Void)?
+    private var connectivityCancel: (() -> Void)?
+    private var isClosed: Bool = false
+
+    init(holder: WatchCompanionHostHolder) {
+        self.holder = holder
+    }
+
+    func replaceHandles(
+        state: @escaping () -> Void,
+        connectivity: @escaping () -> Void
+    ) {
+        lock.lock()
+        let prevState = stateCancel
+        let prevConnectivity = connectivityCancel
+        if isClosed {
+            stateCancel = nil
+            connectivityCancel = nil
+            lock.unlock()
+            prevState?()
+            prevConnectivity?()
+            state()
+            connectivity()
+            return
+        }
+        stateCancel = state
+        connectivityCancel = connectivity
+        lock.unlock()
+        prevState?()
+        prevConnectivity?()
+    }
+
+    func stop() {
+        lock.lock()
+        let prevState = stateCancel
+        let prevConnectivity = connectivityCancel
+        stateCancel = nil
+        connectivityCancel = nil
+        lock.unlock()
+        prevState?()
+        prevConnectivity?()
+    }
+
+    func close() {
+        lock.lock()
+        let prevState = stateCancel
+        let prevConnectivity = connectivityCancel
+        stateCancel = nil
+        connectivityCancel = nil
+        let shouldClose = !isClosed
+        isClosed = true
+        lock.unlock()
+        prevState?()
+        prevConnectivity?()
+        if shouldClose {
+            holder.close()
+        }
+    }
+}
 
 // MARK: - Theme Configuration
 
@@ -46,11 +133,12 @@ public struct AbetaWatchTheme: Sendable {
 // MARK: - View Model
 
 /// Observable SwiftUI view model wrapping `AbetaWatchKit`'s `WatchCompanionHostHolder`
-/// and bridging Kotlin `StateFlow<WatchUiState>` into Swift Concurrency `AsyncStream`.
+/// and bridging Kotlin `StateFlow<WatchUiState>` reactively via `observeUiState`.
 @MainActor
 public final class AbetaWatchViewModel: ObservableObject {
-    private let holder: WatchCompanionHostHolder
-    private var observeTask: Task<Void, Never>?
+    private let lifecycle: WatchObservationLifecycle
+
+    private var holder: WatchCompanionHostHolder { lifecycle.holder }
 
     @Published public private(set) var metrics: [WatchMetricGlance] = []
     @Published public private(set) var cards: [WatchActionCard] = []
@@ -76,15 +164,19 @@ public final class AbetaWatchViewModel: ObservableObject {
         holder: WatchCompanionHostHolder,
         initialScreenId: String = "watch-status"
     ) {
-        self.holder = holder
+        self.lifecycle = WatchObservationLifecycle(holder: holder)
         self.activeScreenId = initialScreenId
-        holder.controller.loadScreen(screenId: initialScreenId)
         startObservingState()
+        holder.controller.loadScreen(screenId: initialScreenId)
     }
 
     deinit {
-        observeTask?.cancel()
-        holder.close()
+        lifecycle.close()
+    }
+
+    /// Cancels active state and connectivity observations without closing the host holder.
+    public func stop() {
+        lifecycle.stop()
     }
 
     /// Loads another SDUI watch screen by identifier.
@@ -169,14 +261,14 @@ public final class AbetaWatchViewModel: ObservableObject {
     }
 
     private func startObservingState() {
-        observeTask?.cancel()
-        observeTask = Task { [weak self] in
-            guard let self else { return }
-            for await state in holder.uiStateStream() {
-                if Task.isCancelled { break }
-                self.apply(state: state)
+        let stateCancel = holder.observeUiState { [weak self] state in
+            let boxed = WatchUiStateBox(value: state)
+            Task { @MainActor [weak self] in
+                self?.apply(state: boxed.value)
             }
         }
+        let connectivityCancel = holder.startConnectivityObservation()
+        lifecycle.replaceHandles(state: stateCancel, connectivity: connectivityCancel)
     }
 }
 
@@ -189,6 +281,7 @@ public struct AbetaWatchSduiView: View {
     @StateObject private var viewModel: AbetaWatchViewModel
     private let theme: AbetaWatchTheme
 
+    @MainActor
     public init(
         bffBaseUrl: String? = nil,
         initialScreenId: String = "watch-status",
@@ -203,6 +296,7 @@ public struct AbetaWatchSduiView: View {
         self.theme = theme
     }
 
+    @MainActor
     public init(
         viewModel: @autoclosure @escaping () -> AbetaWatchViewModel,
         theme: AbetaWatchTheme = .default
@@ -215,9 +309,7 @@ public struct AbetaWatchSduiView: View {
         navigationContainer {
             contentBody
                 .navigationTitle(viewModel.titleText)
-                #if os(watchOS)
                 .navigationBarTitleDisplayMode(.inline)
-                #endif
         }
     }
 
@@ -225,7 +317,7 @@ public struct AbetaWatchSduiView: View {
     private func navigationContainer<Content: View>(
         @ViewBuilder content: () -> Content
     ) -> some View {
-        if #available(iOS 16.0, watchOS 9.0, *) {
+        if #available(watchOS 9.0, *) {
             NavigationStack {
                 content()
             }
@@ -233,9 +325,6 @@ public struct AbetaWatchSduiView: View {
             NavigationView {
                 content()
             }
-            #if os(iOS)
-            .navigationViewStyle(.stack)
-            #endif
         }
     }
 
@@ -384,6 +473,28 @@ public struct AbetaWatchActionCardView: View {
     }
 
     public var body: some View {
+        if card.primaryActionLabel == nil,
+           card.secondaryActionLabel == nil,
+           let cardAction = card.primaryAction {
+            Button {
+                onAction(cardAction)
+            } label: {
+                cardContent
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isButton)
+        } else {
+            cardContent
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if card.primaryActionLabel == nil, let cardAction = card.primaryAction {
+                        onAction(cardAction)
+                    }
+                }
+        }
+    }
+
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 Text(card.title)
@@ -440,31 +551,17 @@ public struct AbetaWatchActionCardView: View {
 // MARK: - Swift Concurrency Extensions
 
 public extension WatchCompanionHostHolder {
-    /// Emits `WatchUiState` updates as a cancellation-aware Swift `AsyncStream`.
-    func uiStateStream(
-        pollIntervalNanoseconds: UInt64 = 150_000_000
-    ) -> AsyncStream<WatchUiState> {
+    /// Emits `WatchUiState` updates as a reactive, cancellation-aware Swift `AsyncStream`
+    /// backed by `observeUiState` with zero polling overhead.
+    func uiStateStream() -> AsyncStream<WatchUiState> {
         AsyncStream { continuation in
-            let task = Task {
-                var lastEmitted: WatchUiState?
-                while !Task.isCancelled {
-                    if let current = self.controller.uiState.value as? WatchUiState {
-                        let changed = lastEmitted.map { !$0.isEqual(current) } ?? true
-                        if changed {
-                            lastEmitted = current
-                            continuation.yield(current)
-                        }
-                    }
-                    do {
-                        try await Task.sleep(nanoseconds: pollIntervalNanoseconds)
-                    } catch {
-                        break
-                    }
+            let cancelHandle = WatchCancelHandle(
+                self.observeUiState { state in
+                    continuation.yield(state)
                 }
-                continuation.finish()
-            }
+            )
             continuation.onTermination = { _ in
-                task.cancel()
+                cancelHandle.cancel()
             }
         }
     }

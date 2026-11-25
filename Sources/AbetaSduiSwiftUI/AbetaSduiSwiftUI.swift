@@ -87,18 +87,31 @@ public struct AbetaIosRootAppView: View {
     }
 
     /// Resolves an SDUI `screenId` from custom-scheme or universal link URLs.
-    public static func defaultResolveScreenId(from url: URL) -> String? {
+    /// Root HTTP/HTTPS URLs (e.g. `https://abeta.dev/`) return `nil` rather than the host domain.
+    public nonisolated static func defaultResolveScreenId(from url: URL) -> String? {
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-           let queryScreen = components.queryItems?.first(where: { $0.name == "screen" })?.value,
+           let queryScreen = components.queryItems?.first(where: { $0.name == "screen" })?.value?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
            !queryScreen.isEmpty {
             return queryScreen
         }
-        let pathSegments = url.pathComponents.filter { $0 != "/" }
+        let pathSegments = url.pathComponents.filter { $0 != "/" && !$0.isEmpty }
         if let screensIndex = pathSegments.firstIndex(of: "screens"),
            pathSegments.indices.contains(screensIndex + 1) {
             return pathSegments[screensIndex + 1]
         }
-        return pathSegments.last ?? url.host
+        let scheme = url.scheme?.lowercased()
+        let isHttpScheme = scheme == "http" || scheme == "https"
+        if !isHttpScheme, url.host == "screens", let firstSegment = pathSegments.first {
+            return firstSegment
+        }
+        if let lastSegment = pathSegments.last {
+            return lastSegment
+        }
+        if !isHttpScheme, let host = url.host?.trimmingCharacters(in: .whitespacesAndNewlines), !host.isEmpty {
+            return host
+        }
+        return nil
     }
 }
 #endif
