@@ -1,15 +1,17 @@
-# Abeta KMP Kit — SwiftPM Binary Distribution
+# Abeta KMP Kit — SwiftPM Distribution
 
-> Direct-URL Swift Package Manager binary mirror for Abeta KMP Kit Apple Release XCFrameworks (`AbetaSduiKit` for iOS 15+ and `AbetaWatchKit` for watchOS 9+). Zero credentials required.
+> Direct-URL Swift Package Manager distribution for Abeta KMP Kit Apple Release XCFrameworks (`AbetaSduiKit` for iOS 15+, `AbetaWatchKit` for watchOS 9+) and companion SwiftUI renderers (`AbetaSduiSwiftUI`, `AbetaWatchSwiftUI`). Zero credentials required.
 
-## Package Manifest & Verification
+## Package Manifest & Sources
 
-- [Package.swift](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/Package.swift): SwiftPM binary target manifest (`AbetaSduiKit` & `AbetaWatchKit`)
-- [SHA256SUMS.txt](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/SHA256SUMS.txt): Verified SHA-256 checksums for all `.xcframework.zip` release archives
+- [Package.swift](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/Package.swift): 4-product SwiftPM manifest (`AbetaSduiKit`, `AbetaWatchKit`, `AbetaWatchSwiftUI`, `AbetaSduiSwiftUI`)
+- [Sources/AbetaWatchSwiftUI/AbetaWatchSwiftUI.swift](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/Sources/AbetaWatchSwiftUI/AbetaWatchSwiftUI.swift): Ready-made watchOS SwiftUI renderer (`AbetaWatchGlanceView`, `AbetaWatchNavigationRoot`, `AbetaWatchMetricRow`, `AbetaWatchStatusBadge`, `AbetaWatchActionButton`)
+- [Sources/AbetaSduiSwiftUI/AbetaSduiSwiftUI.swift](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/Sources/AbetaSduiSwiftUI/AbetaSduiSwiftUI.swift): iOS SwiftUI `AbetaSduiHostView` wrapper
+- [SHA256SUMS.txt](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/SHA256SUMS.txt): Verified SHA-256 checksums for all `.xcframework.zip` and source release archives
 - [README.md](https://raw.githubusercontent.com/Abeta-dev/kmp-spm/main/README.md): Xcode & `Package.swift` integration guide
 
 ## Upstream Platform Repositories
 
-- [Abeta KMP Kit](https://raw.githubusercontent.com/Abeta-dev/kmp/main/llms.txt): Core KMP SDK, 17 canonical SDUI snippets, Room 3 database, & Apple host glue
+- [Abeta KMP Kit](https://raw.githubusercontent.com/Abeta-dev/kmp/main/llms.txt): Core KMP SDK (`v0.6.0`), 23 canonical SDUI snippets (incl. `custom_slot` & `graph_canvas`), version-gated ETag/304 caching, SSE delta streaming, Room 3 database, & Apple/Wear OS host glue
 - [Abeta Dynamic Layout Engine](https://raw.githubusercontent.com/Abeta-dev/layout-engine/main/llms.txt): Multi-tenant SDUI layout CMS & Visual Studio
-- [Abeta SDUI Domain BFF](https://raw.githubusercontent.com/Abeta-dev/sdui-bff/main/llms.txt): Standalone Go BFF powering 6 vertical apps
+- [Abeta SDUI Domain BFF](https://raw.githubusercontent.com/Abeta-dev/sdui-bff/main/llms.txt): Standalone Go BFF powering vertical apps
